@@ -1,3 +1,5 @@
+# expense_request/hooks.py
+
 app_name = "expense_request"
 app_title = "Expense Request"
 app_publisher = "Your Name"
@@ -10,9 +12,9 @@ app_license = "MIT"
 # Document Events
 doc_events = {
     "Expense Entry": {
-        "validate": "expense_request.expense_request.doctype.expense_entry.expense_entry.validate",
-        "on_submit": "expense_request.expense_request.doctype.expense_entry.expense_entry.on_submit",
-        "on_cancel": "expense_request.expense_request.doctype.expense_entry.expense_entry.on_cancel",
+        "validate": "expense_request.expense_request.doctype.expense_entry.services.validation_service.ValidationService.validate",
+        "on_submit": "expense_request.expense_request.doctype.expense_entry.services.accounting_service.AccountingService.create_accounting_entries",
+        "on_cancel": "expense_request.expense_request.doctype.expense_entry.cancel_linked_entries"
     }
 }
 
