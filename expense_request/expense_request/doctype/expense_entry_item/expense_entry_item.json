@@ -1,0 +1,94 @@
+{
+    "actions": [],
+    "creation": "2024-01-01 00:00:00.000000",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "expense_type",
+        "expense_date",
+        "supplier",
+        "amount",
+        "payment_method",
+        "description",
+        "column_break_1",
+        "account",
+        "cost_center",
+        "project"
+    ],
+    "fields": [
+        {
+            "fieldname": "expense_type",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Expense Type",
+            "options": "Expense Type",
+            "reqd": 1
+        },
+        {
+            "fieldname": "expense_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Expense Date",
+            "reqd": 1,
+            "default": "Today"
+        },
+        {
+            "fieldname": "supplier",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Supplier",
+            "options": "Supplier"
+        },
+        {
+            "fieldname": "amount",
+            "fieldtype": "Currency",
+            "in_list_view": 1,
+            "label": "Amount",
+            "reqd": 1
+        },
+        {
+            "fieldname": "payment_method",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Payment Method",
+            "options": "Cash\nPetty Cash\nBank Transfer\nCredit Card",
+            "reqd": 1
+        },
+        {
+            "fieldname": "description",
+            "fieldtype": "Small Text",
+            "label": "Description"
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "account",
+            "fieldtype": "Link",
+            "label": "Account",
+            "options": "Account"
+        },
+        {
+            "fieldname": "cost_center",
+            "fieldtype": "Link",
+            "label": "Cost Center",
+            "options": "Cost Center"
+        },
+        {
+            "fieldname": "project",
+            "fieldtype": "Link",
+            "label": "Project",
+            "options": "Project"
+        }
+    ],
+    "istable": 1,
+    "modified": "2024-01-01 00:00:00.000000",
+    "module": "Expense Request",
+    "name": "Expense Entry Item",
+    "owner": "Administrator",
+    "permissions": [],
+    "sort_field": "modified",
+    "sort_order": "DESC"
+}
