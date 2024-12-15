@@ -1,3 +1,5 @@
+// expense_request/public/js/expense_entry_list.js
+
 frappe.listview_settings['Expense Entry'] = {
     add_fields: ["status", "total_amount", "company"],
     
