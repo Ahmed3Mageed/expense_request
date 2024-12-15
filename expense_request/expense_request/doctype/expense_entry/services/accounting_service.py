@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.utils import flt, getdate
-from ....utils.validation_utils import validate_accounting_period
+from ....utils.expense_utils import validate_accounting_period
 
 class AccountingService:
     def __init__(self, expense_entry):
