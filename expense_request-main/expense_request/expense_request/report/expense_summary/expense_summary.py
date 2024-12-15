@@ -1,3 +1,5 @@
+# expense_request/expense_request/report/expense_summary/expense_summary.py
+
 import frappe
 from frappe import _
 
@@ -50,7 +52,7 @@ def get_columns():
 
 def get_data(filters):
     conditions = get_conditions(filters)
-    
+
     data = frappe.db.sql("""
         SELECT 
             ee.posting_date,
@@ -69,12 +71,12 @@ def get_data(filters):
         ORDER BY 
             ee.posting_date DESC
     """.format(conditions=conditions), filters, as_dict=1)
-    
+
     return data
 
 def get_conditions(filters):
     conditions = []
-    
+
     if filters.get("company"):
         conditions.append("ee.company = %(company)s")
     if filters.get("from_date"):
@@ -85,5 +87,5 @@ def get_conditions(filters):
         conditions.append("ei.expense_type = %(expense_type)s")
     if filters.get("supplier"):
         conditions.append("ei.supplier = %(supplier)s")
-        
+
     return " AND ".join(conditions)
