@@ -1,49 +1,108 @@
-# expense_request/expense_request/doctype/expense_entry/services/validation_service.py
+// expense_request/public/js/expense_entry.js
 
-import frappe
-from frappe import _
-from ...utils.expense_utils import (
-    validate_mandatory_fields,
-    validate_expense_permissions,
-    validate_supplier_exists,
-    validate_expense_date,
-    validate_accounting_period
-)
+frappe.ui.form.on('Expense Entry', {
+    setup: function(frm) {
+        frm.set_query('payment_account', function() {
+            return {
+                filters: {
+                    'account_type': ['in', ['Bank', 'Cash']],
+                    'company': frm.doc.company
+                }
+            };
+        });
+        
+        frm.set_query('expense_type', 'expenses', function() {
+            return {
+                filters: {
+                    'disabled': 0
+                }
+            };
+        });
+    },
+    
+    refresh: function(frm) {
+        frm.events.show_general_ledger(frm);
+    },
+    
+    show_general_ledger: function(frm) {
+        if(frm.doc.docstatus > 0) {
+            frm.add_custom_button(__('General Ledger'), function() {
+                frappe.route_options = {
+                    "voucher_no": frm.doc.name,
+                    "from_date": frappe.datetime.add_days(frm.doc.posting_date, -7),
+                    "to_date": frappe.datetime.add_days(frm.doc.posting_date, 7),
+                    "company": frm.doc.company
+                };
+                frappe.set_route("query-report", "General Ledger");
+            }, __("View"));
+        }
+    },
+    
+    company: function(frm) {
+        if(frm.doc.company) {
+            frm.events.set_payment_account(frm);
+        }
+    },
+    
+    set_payment_account: function(frm) {
+        frappe.call({
+            method: 'frappe.client.get_value',
+            args: {
+                doctype: 'Company',
+                filters: { name: frm.doc.company },
+                fieldname: 'default_cash_account'
+            },
+            callback: function(r) {
+                if(r.message && r.message.default_cash_account) {
+                    frm.set_value('payment_account', r.message.default_cash_account);
+                }
+            }
+        });
+    },
+    
+    validate: function(frm) {
+        frm.events.calculate_total(frm);
+    },
 
-class ValidationService:
-    def __init__(self, expense_entry):
-        self.expense_entry = expense_entry
+    calculate_total: function(frm) {
+        let total = 0;
+        frm.doc.expenses.forEach(function(item) {
+            total += flt(item.amount);
+        });
+        frm.set_value('total_amount', total);
+    }
+});
 
-    def validate(self):
-        """Perform all validations for expense entry"""
-        self._validate_basic_requirements()
-        self._validate_expenses()
-        self._validate_dates()
-
-    def _validate_basic_requirements(self):
-        """Validate basic document requirements"""
-        validate_mandatory_fields(self.expense_entry)
-        validate_expense_permissions(frappe.session.user)
-
-    def _validate_expenses(self):
-        """Validate expense entries"""
-        if not self.expense_entry.expenses:
-            frappe.throw(_("At least one expense item is required"))
-
-        for expense in self.expense_entry.expenses:
-            self._validate_expense_item(expense)
-
-    def _validate_expense_item(self, expense):
-        """Validate individual expense item"""
-        if expense.amount <= 0:
-            frappe.throw(_("Amount must be greater than zero"))
-
-        if expense.supplier:
-            validate_supplier_exists(expense.supplier)
-
-        validate_expense_date(expense.expense_date)
-
-    def _validate_dates(self):
-        """Validate accounting period"""
-        for expense in self.expense_entry.expenses:
-            validate_accounting_period(expense.expense_date)
+frappe.ui.form.on('Expense Entry Item', {
+    expenses_add: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        frappe.model.set_value(cdt, cdn, 'payment_method', 'Cash');
+        frappe.model.set_value(cdt, cdn, 'expense_date', frappe.datetime.get_today());
+    },
+    
+    amount: function(frm, cdt, cdn) {
+        frm.events.calculate_total(frm);
+    },
+    
+    expenses_remove: function(frm) {
+        frm.events.calculate_total(frm);
+    },
+    
+    supplier: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        if(row.supplier) {
+            frappe.call({
+                method: 'frappe.client.get',
+                args: {
+                    doctype: 'Supplier',
+                    name: row.supplier
+                },
+                callback: function(r) {
+                    if(r.message) {
+                        frappe.model.set_value(cdt, cdn, 'account', r.message.default_expense_account);
+                    }
+                }
+            });
+        }
+    }
+});
