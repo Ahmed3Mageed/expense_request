@@ -1,51 +1,49 @@
-frappe.ui.form.on('Expense Entry', {
-    refresh: function(frm) {
-        frm.set_query('payment_account', function() {
-            return {
-                filters: {
-                    'account_type': ['in', ['Bank', 'Cash']],
-                    'company': frm.doc.company
-                }
-            };
-        });
-    },
-    
-    validate: function(frm) {
-        let total = 0;
-        frm.doc.expenses.forEach(function(item) {
-            total += flt(item.amount);
-        });
-        frm.set_value('total_amount', total);
-    }
-});
+# expense_request/expense_request/doctype/expense_entry/services/validation_service.py
 
-frappe.ui.form.on('Expense Entry Item', {
-    expenses_add: function(frm, cdt, cdn) {
-        let row = locals[cdt][cdn];
-        row.expense_date = frappe.datetime.get_today();
-        row.payment_method = 'Cash';
-    },
-    
-    amount: function(frm, cdt, cdn) {
-        frm.events.validate(frm);
-    },
-    
-    supplier: function(frm, cdt, cdn) {
-        let row = locals[cdt][cdn];
-        if(row.supplier) {
-            frappe.call({
-                method: 'frappe.client.get',
-                args: {
-                    doctype: 'Supplier',
-                    name: row.supplier
-                },
-                callback: function(r) {
-                    if(r.message) {
-                        frappe.model.set_value(cdt, cdn, 'account', 
-                            r.message.default_expense_account);
-                    }
-                }
-            });
-        }
-    }
-});
+import frappe
+from frappe import _
+from ...utils.expense_utils import (
+    validate_mandatory_fields,
+    validate_expense_permissions,
+    validate_supplier_exists,
+    validate_expense_date,
+    validate_accounting_period
+)
+
+class ValidationService:
+    def __init__(self, expense_entry):
+        self.expense_entry = expense_entry
+
+    def validate(self):
+        """Perform all validations for expense entry"""
+        self._validate_basic_requirements()
+        self._validate_expenses()
+        self._validate_dates()
+
+    def _validate_basic_requirements(self):
+        """Validate basic document requirements"""
+        validate_mandatory_fields(self.expense_entry)
+        validate_expense_permissions(frappe.session.user)
+
+    def _validate_expenses(self):
+        """Validate expense entries"""
+        if not self.expense_entry.expenses:
+            frappe.throw(_("At least one expense item is required"))
+
+        for expense in self.expense_entry.expenses:
+            self._validate_expense_item(expense)
+
+    def _validate_expense_item(self, expense):
+        """Validate individual expense item"""
+        if expense.amount <= 0:
+            frappe.throw(_("Amount must be greater than zero"))
+
+        if expense.supplier:
+            validate_supplier_exists(expense.supplier)
+
+        validate_expense_date(expense.expense_date)
+
+    def _validate_dates(self):
+        """Validate accounting period"""
+        for expense in self.expense_entry.expenses:
+            validate_accounting_period(expense.expense_date)
